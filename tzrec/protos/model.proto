@@ -9,6 +9,7 @@ import "tzrec/protos/loss.proto";
 import "tzrec/protos/metric.proto";
 import "tzrec/protos/seq_encoder.proto";
 import "tzrec/protos/module.proto";
+import "tzrec/protos/backbone.proto";
 
 enum FeatureGroupType {
     DEEP = 0;
@@ -36,11 +37,35 @@ enum Kernel {
     CUDA = 2;
 }
 
+// configure backbone network common parameters
+message ModelParams {
+    optional float l2_regularization = 1;
+    repeated string outputs = 2;
+}
+
+message Match_Model {
+    required BackboneTower backbone = 1;
+    optional ModelParams model_params = 2;
+}
+message RankModel {
+    required BackboneTower backbone = 1;
+    optional ModelParams model_params = 2;
+}
+message MultiTaskRank {
+    required BackboneTower backbone = 1;
+    optional ModelParams model_params = 2;
+}
 message ModelConfig {
+    // just a name for backbone config
+    optional string model_name = 99;
 
     repeated FeatureGroupConfig feature_groups = 1;
 
     oneof model {
+        Match_Model match_model = 1001;
+        RankModel rank_model = 1002;
+        MultiTaskRank multi_task_rank = 1003;
+
 	    DLRM dlrm = 100;
 	    DeepFM deepfm = 101;
         MultiTower multi_tower = 102;
@@ -65,6 +90,7 @@ message ModelConfig {
 
         RocketLaunching rocket_launching = 600;
     }
+    optional float embedding_regularization = 8 [default = 0.0];
 
     optional uint32 num_class = 2 [default = 1];
 
@@ -75,4 +101,6 @@ message ModelConfig {
     optional VariationalDropout variational_dropout = 11;
 
     optional Kernel kernel = 12 [default = PYTORCH];
+
+    // optional BackboneTower backbone = 17;
 }
