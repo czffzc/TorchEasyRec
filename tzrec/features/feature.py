@@ -507,13 +507,23 @@ class BaseFeature(object, metaclass=_meta_cls):
                     f"input names, e.g., item:cat_a."
                 )
             for x in side_inputs:
-                if not (len(x) == 2 and x[0] in ["user", "item", "context", "feature"]):
+                if not (
+                    len(x) == 2
+                    and x[0] in ["user", "item", "context", "feature", "const"]
+                ):
                     raise InvalidFgInputError(
                         f"{self.__class__.__name__}[{self.name}] must have valid fg "
                         f"input names, e.g., item:cat_a, but got {x}."
                     )
             self._side_inputs = side_inputs
         return self._side_inputs
+
+    @property
+    def stub_type(self) -> bool:
+        """Only used as fg dag intermediate result or not."""
+        if self.config.stub_type:
+            return self.config.stub_type
+        return False
 
     def _build_side_inputs(self) -> Optional[List[Tuple[str, str]]]:
         """Build input field names with side."""
@@ -810,8 +820,21 @@ def _copy_assets(
     return feature
 
 
+def _remove_one_feature_bucketizer(fg_json: Dict[str, Any]) -> Dict[str, Any]:
+    fg_json.pop("hash_bucket_size", None)
+    fg_json.pop("vocab_dict", None)
+    fg_json.pop("vocab_list", None)
+    fg_json.pop("boundaries", None)
+    fg_json.pop("num_buckets", None)
+    if fg_json["feature_type"] != "tokenize_feature":
+        fg_json.pop("vocab_file", None)
+    return fg_json
+
+
 def create_fg_json(
-    features: List[BaseFeature], asset_dir: Optional[str] = None
+    features: List[BaseFeature],
+    asset_dir: Optional[str] = None,
+    remove_bucketizer: bool = False,
 ) -> Dict[str, Any]:
     """Create feature generate config for features."""
     results = []
@@ -832,10 +855,14 @@ def create_fg_json(
                 )
                 seq_to_idx[feature.sequence_name] = len(results) - 1
             fg_json = feature.fg_json()
+            if remove_bucketizer:
+                fg_json = [_remove_one_feature_bucketizer(x) for x in fg_json]
             idx = seq_to_idx[feature.sequence_name]
             results[idx]["features"].extend(fg_json)
         else:
             fg_json = feature.fg_json()
+            if remove_bucketizer:
+                fg_json = [_remove_one_feature_bucketizer(x) for x in fg_json]
             results.extend(fg_json)
     return {"features": results}
 
