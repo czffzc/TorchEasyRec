@@ -178,7 +178,7 @@ def load_torch_layer(name):
       name (str): Module class name, e.g. 'Linear' or 'YourCustomLayer'
 
     Return:
-      (layer_class, is_customize)
+      (module_class, is_customize)
       module_class: The class object (e.g., torch.nn.Linear)
       is_customize: True if loaded from custom namespace, False if from torch.nn
     """
