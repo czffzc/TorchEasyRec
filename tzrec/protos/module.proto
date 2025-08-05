@@ -74,3 +74,8 @@ message MaskNetModule {
     optional bool use_parallel = 4 [default=true];
 
 }
+
+message FM {
+    optional bool use_variant = 1;
+    optional float l2_regularization = 5 [default = 1e-4];
+}
